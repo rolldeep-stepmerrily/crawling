@@ -1,4 +1,4 @@
-import { Analyzer } from './analyzer';
+import { FrameAnalyzer } from './frame-analyzer';
 import { Crawler } from './crawler';
 
 async function crawl() {
@@ -7,7 +7,7 @@ async function crawl() {
   try {
     await crawler.initialize();
 
-    await crawler.goto('https://nestjs.com/');
+    await crawler.goto('https://blog.naver.com/realmandinaeyong/223227817431');
 
     const page = crawler.findPage();
 
@@ -15,14 +15,25 @@ async function crawl() {
       throw new Error('Failed to get page');
     }
 
-    const analyzer = new Analyzer(page);
+    await page.waitForFrame(async (frame) => {
+      return frame.url().includes('PostView');
+    });
 
-    const title = await analyzer.findTitle();
-    console.log(title);
+    const frame = page.mainFrame().childFrames()[0];
 
-    const pageHeader = await page.$('.page-header');
+    const analyzer = new FrameAnalyzer(frame);
 
-    await pageHeader?.screenshot({ path: 'page-header.png', omitBackground: true });
+    const blogName = await analyzer.findBlogName();
+
+    const author = await analyzer.findAuthor();
+
+    const title = await page.title();
+
+    const content = await analyzer.findContent();
+
+    const images = await analyzer.findImages();
+
+    console.log({ blogName, author, title, content, images });
   } catch (e) {
     console.error(e);
 
